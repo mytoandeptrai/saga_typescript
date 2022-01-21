@@ -9,6 +9,9 @@ import { useAppDispatch, useAppSelector } from './../../../app/hooks';
 import { selectStudentList, selectStudentFilter } from './../studentSlice';
 import { selectCityList } from './../../City/citySlice';
 import { ListParams } from './../../../models/common';
+import { Student } from '../../../models';
+import studentApi from '../../../api/studentApi';
+import { Link, useHistory, useRouteMatch } from 'react-router-dom';
 
 export interface ListPageProps {}
 
@@ -34,6 +37,9 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 export default function ListPage(props: ListPageProps) {
+  const match = useRouteMatch();
+  const history = useHistory();
+
   const studentList = useAppSelector(selectStudentList);
   const pagination = useAppSelector(selectStudentPagination);
   const filter = useAppSelector(selectStudentFilter);
@@ -65,6 +71,20 @@ export default function ListPage(props: ListPageProps) {
     dispatch(studentActions.setFilter(newFilter));
   };
 
+  const handleRemoveStudent = async (student: Student) => {
+    try {
+      await studentApi.remove(student?.id || '');
+
+      dispatch(studentActions.setFilter({ ...filter }));
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const handleEditStudent = async (student: Student) => {
+    history.push(`${match.url}/${student.id}`);
+  };
+
   return (
     <>
       <Box className={classes.root}>
@@ -72,9 +92,11 @@ export default function ListPage(props: ListPageProps) {
         <>
           <Box className={classes.titleContainer}>
             <Typography variant="h4">Students</Typography>
-            <Button variant="contained" color="primary">
-              Add new student
-            </Button>
+            <Link to={`${match.url}/add`} style={{ textDecoration: 'none' }}>
+              <Button variant="contained" color="primary">
+                Add new student
+              </Button>
+            </Link>
           </Box>
           {/* Filter  */}
           <Box mb={3}>
@@ -86,7 +108,12 @@ export default function ListPage(props: ListPageProps) {
             />
           </Box>
           {/* Student Table */}
-          <StudentTable cityMap={cityMap} studentList={studentList} />
+          <StudentTable
+            cityMap={cityMap}
+            studentList={studentList}
+            onRemove={handleRemoveStudent}
+            onEdit={handleEditStudent}
+          />
           {/* Pagination  */}
           <Box mt={2} display="flex" justifyContent="center">
             <Pagination
